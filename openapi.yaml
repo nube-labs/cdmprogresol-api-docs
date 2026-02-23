@@ -1,0 +1,220 @@
+openapi: 3.0.3
+info:
+  title: CDM Progresol Integration API
+  version: 1.0.0
+  description: >
+    Official integration documentation for third-party systems.
+    Access is restricted via API Key authentication.
+
+servers:
+  - url: https://chat.clubdemaestrosprogresol.com/public/
+    description: Production server
+
+paths:
+  /participants/{document_number}/purchases:
+    get:
+      summary: Get latest purchases of a participant
+      description: >
+        Returns the most recent purchases of a participant identified by document number.
+        Purchases are ordered by COALESCE(PurchaseDate, CreatedAt) descending.
+
+      security:
+        - ApiKeyAuth: []
+
+      parameters:
+        - name: document_number
+          in: path
+          required: true
+          description: >
+            Participant document number.
+            Must contain only digits and be between 8 and 12 characters long.
+          schema:
+            type: string
+            pattern: '^[0-9]{8,12}$'
+            example: "48309200"
+
+        - name: limit
+          in: query
+          required: false
+          description: >
+            Maximum number of purchases to return.
+            Default is 10. Maximum allowed value is 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+            example: 10
+
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasesResponse'
+              examples:
+                success:
+                  value:
+                    document_number: "48309200"
+                    purchases:
+                      - purchase_id: 1001
+                        purchase_date: "2026-02-01"
+                        status:
+                          id: 2
+                          name: "Approved"
+                        receipt_type: "Factura"
+                        receipt_number: "F001-123"
+                        total_amount: 450.50
+                        total_points: 45
+                        details:
+                          - product_name: "Cemento"
+                            quantity: 10
+                            unit_points: 3
+                            total_points: 30
+
+        '400':
+          description: Invalid document number format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Invalid document number"
+
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+
+        '404':
+          description: Participant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Participant not found"
+
+        '429':
+          description: Rate limit exceeded (60 requests per minute per IP)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Too many requests"
+
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+
+  schemas:
+    PurchasesResponse:
+      type: object
+      properties:
+        document_number:
+          type: string
+          example: "48309200"
+        purchases:
+          type: array
+          items:
+            $ref: '#/components/schemas/Purchase'
+      required:
+        - document_number
+        - purchases
+
+    Purchase:
+      type: object
+      properties:
+        purchase_id:
+          type: integer
+          example: 1001
+        purchase_date:
+          type: string
+          format: date
+          example: "2026-02-01"
+        status:
+          $ref: '#/components/schemas/PurchaseStatus'
+        receipt_type:
+          type: string
+          example: "Factura"
+        receipt_number:
+          type: string
+          example: "F001-123"
+        total_amount:
+          type: number
+          format: decimal
+          example: 450.50
+        total_points:
+          type: integer
+          example: 45
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseDetail'
+      required:
+        - purchase_id
+        - purchase_date
+        - status
+        - receipt_type
+        - receipt_number
+        - total_amount
+        - total_points
+        - details
+
+    PurchaseStatus:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 2
+        name:
+          type: string
+          example: "Approved"
+      required:
+        - id
+        - name
+
+    PurchaseDetail:
+      type: object
+      properties:
+        product_name:
+          type: string
+          example: "Cemento"
+        quantity:
+          type: integer
+          example: 10
+        unit_points:
+          type: integer
+          example: 3
+        total_points:
+          type: integer
+          example: 30
+      required:
+        - product_name
+        - quantity
+        - unit_points
+        - total_points
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
