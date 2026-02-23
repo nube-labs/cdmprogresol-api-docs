@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <title>Club de Maestros Progresol API</title>
 
-    <!-- Redoc script -->
     <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
 
     <style>
@@ -16,10 +15,17 @@
   </head>
 
   <body>
-    <redoc 
-      spec-url="https://nube-labs.github.io/cdmprogresol-api-docs/openapi.yaml"
-      expand-responses="200,201"
-      hide-download-button
-    ></redoc>
+    <div id="redoc-container"></div>
+
+    <script>
+      Redoc.init(
+        "https://nube-labs.github.io/cdmprogresol-api-docs/openapi.yaml",
+        {
+          expandResponses: "200,201",
+          hideDownloadButton: true
+        },
+        document.getElementById("redoc-container")
+      );
+    </script>
   </body>
 </html>
