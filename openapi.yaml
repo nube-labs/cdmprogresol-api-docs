@@ -1,44 +1,108 @@
 openapi: 3.0.3
+
 info:
-  title: CDM Progresol Integration API
+  title: Club de Maestros Progresol Integration API
   version: 1.0.0
-  description: >
-    Official integration documentation for third-party systems.
-    Access is restricted via API Key authentication.
+  description: |
+    ## Overview
+
+    The **Club de Maestros Progresol Integration API** provides secure access to
+    participant purchase data for authorized third-party systems.
+
+    This API is part of **Project Cantera** and is maintained by **Nube Labs**
+    on behalf of Progresol.
+
+    ---
+
+    ## Authentication
+
+    All requests require an API Key sent in the `X-Api-Key` header.
+
+    Example:
+
+    ```
+    X-Api-Key: YOUR_API_KEY
+    ```
+
+    Requests without a valid API key will receive a `401 Unauthorized` response.
+
+    ---
+
+    ## Rate Limiting
+
+    To ensure platform stability, requests are limited to:
+
+    **60 requests per minute per IP address**
+
+    When the limit is exceeded, the API returns:
+
+    - HTTP `429 Too Many Requests`
+
+    Rate limit headers included in responses:
+
+    - `X-RateLimit-Limit`
+    - `X-RateLimit-Remaining`
+    - `Retry-After`
+
+    ---
+
+    ## Base URL
+
+    Production:
+    `https://chat.clubdemaestrosprogresol.com/public/`
+
+  contact:
+    name: Nube Labs – API Support
+    email: soporte@nube.la
+
+  license:
+    name: Proprietary – Progresol
+    url: https://clubdemaestrosprogresol.com
 
 servers:
   - url: https://chat.clubdemaestrosprogresol.com/public/
     description: Production server
 
+security:
+  - ApiKeyAuth: []
+
 paths:
   /participants/{document_number}/purchases:
     get:
-      summary: Get latest purchases of a participant
-      description: >
-        Returns the most recent purchases of a participant identified by document number.
-        Purchases are ordered by COALESCE(PurchaseDate, CreatedAt) descending.
+      summary: Retrieve latest participant purchases
+      description: |
+        Returns the most recent purchases of a participant identified by
+        their document number.
 
-      security:
-        - ApiKeyAuth: []
+        Results are ordered by:
+
+        ```
+        COALESCE(PurchaseDate, CreatedAt) DESC
+        ```
 
       parameters:
         - name: document_number
           in: path
           required: true
-          description: >
+          description: |
             Participant document number.
-            Must contain only digits and be between 8 and 12 characters long.
+
+            Requirements:
+            - Digits only
+            - Between 8 and 9 characters
           schema:
             type: string
-            pattern: '^[0-9]{8,12}$'
+            pattern: '^[0-9]{8,9}$'
             example: "48309200"
 
         - name: limit
           in: query
           required: false
-          description: >
+          description: |
             Maximum number of purchases to return.
-            Default is 10. Maximum allowed value is 50.
+
+            - Default: 10
+            - Maximum: 50
           schema:
             type: integer
             minimum: 1
@@ -49,29 +113,21 @@ paths:
       responses:
         '200':
           description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              description: Maximum requests allowed per minute
+              schema:
+                type: integer
+                example: 60
+            X-RateLimit-Remaining:
+              description: Remaining requests in the current window
+              schema:
+                type: integer
+                example: 45
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PurchasesResponse'
-              examples:
-                success:
-                  value:
-                    document_number: "48309200"
-                    purchases:
-                      - purchase_id: 1001
-                        purchase_date: "2026-02-01"
-                        status:
-                          id: 2
-                          name: "Approved"
-                        receipt_type: "Factura"
-                        receipt_number: "F001-123"
-                        total_amount: 450.50
-                        total_points: 45
-                        details:
-                          - product_name: "Cemento"
-                            quantity: 10
-                            unit_points: 3
-                            total_points: 30
 
         '400':
           description: Invalid document number format
@@ -80,7 +136,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
-                error: "Invalid document number"
+                error: "Invalid document number format. Only digits (8–9 characters) are allowed."
 
         '401':
           description: Missing or invalid API key
@@ -89,7 +145,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
-                error: "Unauthorized"
+                error: "Unauthorized. Valid X-Api-Key header is required."
 
         '404':
           description: Participant not found
@@ -98,23 +154,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
-                error: "Participant not found"
+                error: "Participant not found."
 
         '429':
-          description: Rate limit exceeded (60 requests per minute per IP)
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds before retrying
+              schema:
+                type: integer
+                example: 60
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
-                error: "Too many requests"
+                error: "Rate limit exceeded. Maximum 60 requests per minute."
 
         '500':
-          description: Internal server error
+          description: Unexpected internal error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "An unexpected error occurred. Please contact API support if the issue persists."
 
 components:
   securitySchemes:
@@ -122,6 +186,13 @@ components:
       type: apiKey
       in: header
       name: X-Api-Key
+      description: |
+        Provide your assigned API key in the request header.
+
+        Example:
+        ```
+        X-Api-Key: YOUR_API_KEY
+        ```
 
   schemas:
     PurchasesResponse:
@@ -158,7 +229,7 @@ components:
           example: "F001-123"
         total_amount:
           type: number
-          format: decimal
+          format: double
           example: 450.50
         total_points:
           type: integer
