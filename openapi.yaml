@@ -205,7 +205,7 @@ components:
       in: header
       name: X-Api-Key
       description: |
-        API Key issued by Progresol for authorized integrations.
+        API Key issued by Nube Labs for authorized integrations.
 
         This header must be included in every request:
 
