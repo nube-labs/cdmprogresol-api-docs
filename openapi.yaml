@@ -28,6 +28,23 @@ info:
 
     ---
 
+    ## Network Access & IP Whitelisting
+
+    The production environment is protected by a firewall.
+
+    Only pre-authorized IP addresses are allowed to access the API.
+
+    Before integrating with the production environment, partners must:
+
+    - Provide their public outbound IP address(es)
+    - Receive confirmation of whitelist activation from Progresol
+
+    Requests originating from non-authorized IP addresses will be blocked at the network level.
+
+    For testing or onboarding, contact Progresol technical support.
+
+    ---
+
     ## Rate Limiting
 
     To ensure platform stability, requests are limited to:
