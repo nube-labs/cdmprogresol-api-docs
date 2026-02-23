@@ -37,11 +37,11 @@ info:
     Before integrating with the production environment, partners must:
 
     - Provide their public outbound IP address(es)
-    - Receive confirmation of whitelist activation from Progresol
+    - Receive confirmation of whitelist activation from Nube Labs.
 
     Requests originating from non-authorized IP addresses will be blocked at the network level.
 
-    For testing or onboarding, contact Progresol technical support.
+    For testing or onboarding, contact Nube Labs technical support.
 
     ---
 
@@ -198,63 +198,127 @@ paths:
                 error: "An unexpected error occurred. Please contact API support if the issue persists."
 
 components:
+
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
       in: header
       name: X-Api-Key
       description: |
-        Provide your assigned API key in the request header.
+        API Key issued by Progresol for authorized integrations.
 
-        Example:
-        ```
-        X-Api-Key: YOUR_API_KEY
-        ```
+        This header must be included in every request:
+
+            X-Api-Key: YOUR_API_KEY
+
+        Requests without a valid key will return HTTP 401.
 
   schemas:
+
     PurchasesResponse:
       type: object
+      description: |
+        Root response object returned when querying participant purchases.
+
+        The response includes the participant identifier and an array
+        of purchase records ordered in descending chronological order
+        based on COALESCE(PurchaseDate, CreatedAt).
       properties:
         document_number:
           type: string
+          description: |
+            Participant document number used in the request.
+
+            This value is returned for traceability and validation
+            purposes.
           example: "48309200"
+
         purchases:
           type: array
+          description: |
+            Collection of purchase records associated with the participant.
+
+            The number of elements returned depends on the `limit`
+            query parameter.
           items:
             $ref: '#/components/schemas/Purchase'
+
       required:
         - document_number
         - purchases
 
+
     Purchase:
       type: object
+      description: |
+        Represents a single purchase registered within the
+        Club de Maestros Progresol loyalty program.
+
+        Each purchase generates loyalty points for the participant.
       properties:
+
         purchase_id:
           type: integer
+          description: |
+            Unique internal identifier of the purchase record.
+
+            This identifier is stable and can be used for reconciliation.
           example: 1001
+
         purchase_date:
           type: string
           format: date
+          description: |
+            Date when the purchase was recorded in the system.
+
+            Format: ISO 8601 (YYYY-MM-DD)
           example: "2026-02-01"
+
         status:
+          description: |
+            Current status of the purchase transaction.
           $ref: '#/components/schemas/PurchaseStatus'
+
         receipt_type:
           type: string
+          description: |
+            Commercial document type associated with the purchase
+            (e.g., Factura, Boleta de Venta).
           example: "Factura"
+
         receipt_number:
           type: string
+          description: |
+            Commercial document number issued by the store
+            corresponding to the purchase.
           example: "F001-123"
+
         total_amount:
           type: number
           format: double
+          description: |
+            Total monetary amount of the purchase.
+
+            Currency: Peruvian Sol (PEN).
+            Precision may include decimal values.
           example: 450.50
+
         total_points:
           type: integer
+          description: |
+            Total loyalty points earned from this purchase.
+
+            This value represents the sum of all points generated
+            by the products included in the purchase.
           example: 45
+
         details:
           type: array
+          description: |
+            Detailed breakdown of products included in the purchase.
           items:
             $ref: '#/components/schemas/PurchaseDetail'
+
       required:
         - purchase_id
         - purchase_date
@@ -265,44 +329,84 @@ components:
         - total_points
         - details
 
+
     PurchaseStatus:
       type: object
+      description: |
+        Represents the lifecycle status of a purchase transaction.
       properties:
         id:
           type: integer
+          description: |
+            Internal numeric identifier of the status.
           example: 2
+
         name:
           type: string
+          description: |
+            Human-readable status name.
           example: "Approved"
+
       required:
         - id
         - name
 
+
     PurchaseDetail:
       type: object
+      description: |
+        Represents an individual product line within a purchase.
       properties:
         product_name:
           type: string
+          description: |
+            Name of the product purchased.
           example: "Cemento"
+
         quantity:
           type: integer
+          description: |
+            Number of units purchased.
           example: 10
+
         unit_points:
           type: integer
+          description: |
+            Loyalty points earned per unit of the product.
           example: 3
+
         total_points:
           type: integer
+          description: |
+            Total points generated by this line item.
+
+            Calculation:
+                quantity × unit_points
           example: 30
+
       required:
         - product_name
         - quantity
         - unit_points
         - total_points
 
+
     ErrorResponse:
       type: object
+      description: |
+        Standard error response structure returned by the API
+        when a request cannot be processed.
+
+        Errors are communicated using appropriate HTTP status codes.
       properties:
         error:
           type: string
+          description: |
+            Human-readable description of the error condition.
+
+            This field is intended for integrator debugging
+            and operational handling.
+          example: "Participant not found"
+
       required:
         - error
