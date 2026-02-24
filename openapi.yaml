@@ -77,7 +77,7 @@ info:
     url: https://clubdemaestrosprogresol.com
 
 servers:
-  - url: https://chat.clubdemaestrosprogresol.com/public/
+  - url: https://api.chat.clubdemaestrosprogresol.com/public/
     description: Production server
 
 security:
